@@ -1,7 +1,24 @@
 let itemsContainer = document.getElementById("todoItemsContainer")
 let userInputElement = document.getElementById("todoUserInput")
+let addBtn = document.querySelector("#add-todo-button")
+let saveBtn = document.querySelector("#save-todo-button")
 
 let taskCounter = 0;
+
+function getSavedTodoList(){
+    let stringifiedList = localStorage.getItem("savedTodoList")
+    let parsedTodoList = JSON.parse(stringifiedList)
+
+    return parsedTodoList || []
+}
+
+let todoList = getSavedTodoList()
+
+let saveTodoList = function(){
+    let stringifiedList = JSON.stringify(todoList)
+    localStorage.setItem("savedTodoList", stringifiedList)
+    alert("Your tasks have been saved!")
+}
 
 let addTodoItem = function (task) {
     let todoElement = document.createElement("li")
@@ -33,25 +50,24 @@ let addTodoItem = function (task) {
     deleteIcon.classList.add("fa-solid", "fa-trash", "delete-icon")
     deleteConatiner.appendChild(deleteIcon)
 
+    if(task.status){
+        inputElement.checked = true
+        labelElement.classList.add("checked")
+    }
+
     deleteIcon.addEventListener('click', function(){
         itemsContainer.removeChild(todoElement)
+        todoList = todoList.filter(function (t){
+            return t.uniqueID !== task.uniqueID
+        })
     })
 
     inputElement.addEventListener('change', function(){
         labelElement.classList.toggle("checked")
+        task.status = inputElement.checked ? true : false
     })
 }
 
-function createTodoTask(userValue){
-    let task = {
-        taskHeader: userValue,
-        uniqueID: taskCounter
-    }
-    taskCounter++
-    addTodoItem(task)
-}
-
-let addBtn = document.querySelector(".add-todo-button")
 addBtn.addEventListener('click', function(){
     let userValue = userInputElement.value.trim()
     if(userValue === ""){
@@ -59,8 +75,15 @@ addBtn.addEventListener('click', function(){
         return;
     }
 
-    createTodoTask(userValue)
+    let task = {
+        taskHeader: userValue,
+        uniqueID: taskCounter,
+        status : false
+    }
 
+    taskCounter++
+    todoList.push(task)
+    addTodoItem(task)
     userInputElement.value = ""
 })
 
@@ -70,3 +93,10 @@ userInputElement.addEventListener("keydown", function(event){
     }
 })
 
+
+for(let task of todoList){
+    addTodoItem(task)
+    taskCounter = Math.max(taskCounter, task.uniqueID + 1)
+}
+
+saveBtn.addEventListener('click', saveTodoList)
